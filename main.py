@@ -144,6 +144,7 @@ def validation_loop(sess, g, n_batches, chars=None, val_gen = None, tb_writer=No
 def init_models_and_data(istrain):
 
   print ('Loading data generators')
+  # data generator gives list of video
   val_gen, val_epoch_size = setup_generators()
   print ('Done')
 
@@ -155,17 +156,22 @@ def init_models_and_data(istrain):
   if config.lm_path:
     # initialize singleton rnn so that RNN tf graph is created first
     beam_batch_size = 1
+    #CharRnnLmWrapperSingleton???
     lm_handle = CharRnnLmWrapperSingleton(batch_size=beam_batch_size,
                                           sess=sess,
                                           checkpoint_path=config.lm_path)
-
+  #TransformerGraphClass???
   TransformerGraphClass = graph_dict[config.graph_type]
 
+  #get shape?
   (shapes_in, dtypes_in), (shapes_out, dtypes_out) = \
     TransformerGraphClass.get_model_input_target_shapes_and_types()
 
+  # go_idx?? go_token_index?? x_val looks like input of validation set
   go_idx = val_gen.label_vectorizer.char_indices[val_gen.label_vectorizer.go_token]
   x_val = tf.placeholder(dtypes_in[0], shape=shapes_in[0])
+  
+  # y val looks like output of validation set
   prev_shape = list(shapes_out[0])
   if config.test_aug_times : prev_shape[0] *= config.test_aug_times
   prev_ph = tf.placeholder(dtypes_out[0], shape=prev_shape)
@@ -173,6 +179,8 @@ def init_models_and_data(istrain):
   y_val = [prev_ph, y_ph]
 
   chars = val_gen.label_vectorizer.chars
+  
+  #val g?? what is this? output of TransformerGraphClass
   val_g = TransformerGraphClass(x_val,
                                 y_val,
                                 is_training=False,
